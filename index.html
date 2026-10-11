@@ -1,3 +1,5 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- "PULL YELLOW STRAP" quick-draw game. Paste into a Carrd "Embed" element (type: Code). Suggested embed size: ~400 x 560. -->
 <style>
   html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
@@ -27,15 +29,31 @@
        padding: 16px 18px; box-sizing: border-box; }
   body:not(.show-toggle) .shopify-buy-frame--toggle { display: none !important; }
   .panel { max-height: 92%; overflow-y: auto; }
+  @keyframes panelIn { from { opacity: 0; transform: translate(-50%,-46%) scale(.94); }
+                       to { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
+  .panel.is-entering { animation: panelIn .3s cubic-bezier(.2,.8,.2,1) both; }
   .panel h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: 1.5px; color: #f7c921; }
   .panel p { margin: 0 0 12px; font-size: 14px; line-height: 1.4; letter-spacing: .3px; font-family: Arial, sans-serif; }
   .result-note { display: block; margin-top: 8px; font-size: 12px; line-height: 1.35; }
   .panel button { min-height: 44px; font: inherit; font-size: 18px; letter-spacing: 1.5px; background: #f7c921; color: #111;
                   border: 0; border-radius: 8px; padding: 9px 26px; cursor: pointer; touch-action: manipulation; }
+  @media (max-width: 600px) {
+    .stage { min-height: 500px; }
+    svg { transform: scale(1.12); transform-origin: center 48%; }
+    .cue { width: 88%; font-size: clamp(34px, 10vw, 44px); -webkit-text-stroke-width: 4px; }
+    .panel { width: min(350px, calc(100% - 20px)); padding: 22px 20px; border-width: 4px; }
+    .panel h1 { margin-bottom: 10px; font-size: 32px; }
+    .panel p { margin-bottom: 18px; font-size: 17px; line-height: 1.45; }
+    .panel button { width: 100%; min-height: 58px; font-size: 23px; }
+    .result-note { margin-top: 10px; font-size: 14px; line-height: 1.4; }
+    .mute { right: 12px; width: 48px; height: 48px; font-size: 19px; }
+  }
   @media (max-width: 340px) {
-    .panel { padding: 13px 14px; }
-    .panel h1 { font-size: 23px; }
-    .panel p { font-size: 13px; }
+    .stage { min-height: 460px; }
+    svg { transform: scale(1.06); }
+    .panel { padding: 18px 16px; }
+    .panel h1 { font-size: 28px; }
+    .panel p { font-size: 16px; }
   }
   @media (max-height: 500px) {
     .stage { min-height: 0; }
@@ -70,7 +88,7 @@
       <line x1="119" y1="150" x2="119" y2="208" stroke="#fff" stroke-width="1.2" stroke-opacity=".7"/>
 
       <g id="kc-tag">
-        <rect x="64" y="180" width="112" height="330" fill="#000" fill-opacity="0"/>
+        <rect x="44" y="180" width="152" height="330" fill="#000" fill-opacity="0"/>
         <g filter="url(#shadow)"><rect x="92" y="190" width="56" height="300" rx="3" fill="url(#fabric)"/></g>
         <rect x="92" y="190" width="56" height="300" rx="3" fill="none" stroke="#e0a800" stroke-width="6"/>
         <rect x="92" y="190" width="56" height="300" rx="3" fill="none" stroke="#fff3a0" stroke-width="6" stroke-dasharray="1.2 2.2" opacity=".55"/>
@@ -184,15 +202,24 @@
         : 'The queue paused long enough for Test Track to complete a full lap and file a small delay report. Watch your Cast Members, be nice, and thank them.';
     return '<b>' + rt + ' ms</b><br>' + pace + '<br><span class="result-note">' + note + '</span>';
   }
+  function revealResults() {
+    panel.classList.remove('is-entering');
+    void panel.offsetWidth;
+    panel.classList.add('is-entering');
+    panel.style.display = 'block';
+  }
   function success(e) {
-    var ts = e.timeStamp, rt = Math.max(1, Math.round(ts - tCue));
+    var rt = Math.max(1, Math.round(performance.now() - tCue));
     cue.style.display = 'none'; drag = false; juice(e, rt); state = 'over';
     var dd = Math.sqrt(dx * dx + dy * dy) || 1;     // YANK: the whole keychain lurches along the pull, then drops back
     vx += dx / dd * 520; vy += dy / dd * 520; v1 += (dx < 0 ? 1 : -1) * 25; ensure();
-    $('ttl').textContent = 'RESULTS';
-    msg.innerHTML = resultMessage(rt);
-    $('go').textContent = 'PLAY AGAIN'; panel.style.display = 'block';
-    $('shop').style.display = 'block'; document.body.classList.add('show-toggle'); loadShop();
+    setTimeout(function () {
+      $('ttl').textContent = 'RESULTS';
+      msg.innerHTML = resultMessage(rt);
+      $('go').textContent = 'PLAY AGAIN';
+      $('shop').style.display = 'block'; document.body.classList.add('show-toggle'); loadShop();
+      revealResults();
+    }, 200);
   }
   function start() {
     panel.style.display = 'none'; $('shop').style.display = 'none'; document.body.classList.remove('show-toggle'); cue.style.display = 'none';
@@ -239,7 +266,7 @@
 
   var cv = $('fx'), cx = cv.getContext('2d'), parts = [], fxRaf = null, fxLast = 0;
   function burst(x, y, n, ux, uy) {
-    var r = stage.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+    var r = stage.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2);
     cv.width = r.width * d; cv.height = r.height * d; cx.setTransform(d, 0, 0, d, 0, 0);
     var cols = ['#f7c921', '#fbd53a', '#111', '#fff', '#e0a800'];
     for (var i = 0; i < n; i++) {
