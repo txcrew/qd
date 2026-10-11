@@ -129,6 +129,7 @@
   var W1 = 6, W2 = 14, D1 = 2.4, D2 = 3.2, C = 5;   // D1/D2 = damping (higher = less bounce)
   var a1 = 6, a2 = 18, v1 = 0, v2 = 0, y = 0, vy = 0, tA = 0, xT = 0, yT = 0, x = 0, vx = 0, px = 0, py = 0;   // x,y = whole-keychain tug; px,py = pointer
   var raf = null, last = 0, drag = false, gx = 0, gy = 0, dx = 0, dy = 0;
+  var motionEnabled = false, motionReady = false, motionBaseBeta = 0, motionBaseGamma = 0, motionX = 0, motionY = 0, motionAngle = 0;
 
   // game
   var state = 'idle', timer = null, tCue = 0;
@@ -155,7 +156,11 @@
     for (var i = 0; i < n; i++) {
       var d = a2 - a1, f1 = -W1 * a1 - D1 * v1 + C * S(d), f2 = -W2 * S(a2) - D2 * v2 - C * S(d) * 1.5, fx, fy;
       if (drag) { f2 += 220 * (tA - a2) - 28 * v2; fx = -80 * (x - xT) - 13 * vx; fy = -80 * (y - yT) - 13 * vy; }
-      else { fx = -50 * x - 12 * vx; fy = -50 * y - 12 * vy; }   // near-critically damped: settles without wobble
+      else {
+        if (motionEnabled) f1 += 2 * (motionAngle - a1) - 0.4 * v1;
+        fx = -50 * (x - (motionEnabled ? motionX : 0)) - 12 * vx;
+        fy = -50 * (y - (motionEnabled ? motionY : 0)) - 12 * vy;
+      }   // near-critically damped: settles without wobble
       v1 += f1 * h; v2 += f2 * h; vx += fx * h; vy += fy * h;
       a1 = clamp(a1 + v1 * h, 35); a2 = clamp(a2 + v2 * h, 190); x = clamp(x + vx * h, 45); y = Math.max(-40, Math.min(45, y + vy * h));
     }
@@ -168,6 +173,32 @@
   // client coords -> SVG viewBox coords
   var pt = svg.createSVGPoint();
   function toVB(e) { pt.x = e.clientX; pt.y = e.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
+
+  function readTilt(e) {
+    if (typeof e.beta !== 'number' || typeof e.gamma !== 'number') return;
+    if (!motionReady) {
+      motionBaseBeta = e.beta;
+      motionBaseGamma = e.gamma;
+      motionReady = true;
+    }
+    var tiltX = e.gamma - motionBaseGamma, tiltY = e.beta - motionBaseBeta;
+    motionX = lim(tiltX * 0.8, -45, 45);
+    motionY = lim(tiltY * 0.65, -35, 35);
+    motionAngle = lim(tiltX * 0.45, -24, 24);
+    ensure();
+  }
+
+  function enableMotion() {
+    if (motionEnabled || !window.DeviceOrientationEvent) return;
+    var permission = typeof DeviceOrientationEvent.requestPermission === 'function'
+      ? DeviceOrientationEvent.requestPermission()
+      : Promise.resolve('granted');
+    permission.then(function (result) {
+      if (result !== 'granted') return;
+      motionEnabled = true;
+      window.addEventListener('deviceorientation', readTilt, { passive: true });
+    }).catch(function () {});
+  }
 
   function say(s) { msg.textContent = s; }
   function showRoundButton(title, message) {
@@ -408,7 +439,7 @@
   }
   svg.addEventListener('pointerup', release);
   svg.addEventListener('pointercancel', release);
-  $('go').addEventListener('click', function () { audio(); if (state === 'armed') beginWait(); else start(); });
+  $('go').addEventListener('click', function () { audio(); enableMotion(); if (state === 'armed') beginWait(); else start(); });
   $('mute').addEventListener('click', function () { muted = !muted; this.textContent = muted ? '🔇' : '🔊'; audio(); });
 
   draw(); ensure();   // initial settling swing behind the start panel
