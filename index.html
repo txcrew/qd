@@ -1,0 +1,389 @@
+<!-- "PULL YELLOW STRAP" quick-draw game. Paste into a Carrd "Embed" element (type: Code). Suggested embed size: ~400 x 560. -->
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  .stage { position: relative; display: flex; flex-direction: column; height: 100%; min-height: 420px; box-sizing: border-box;
+           user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+           font-family: 'Oswald','Bebas Neue',Impact,'Arial Narrow',sans-serif; }
+  svg { flex: 1; min-height: 0; width: 100%; overflow: visible; touch-action: none; }
+  #kc-tag { cursor: grab; } .dragging #kc-tag { cursor: grabbing; }
+    .cue { position: absolute; display: none; transform: translate(-50%,-50%) rotate(var(--rot,0deg)); width: 78%; text-align: center; pointer-events: none;
+      font-size: clamp(28px, 9vw, 38px); line-height: 1.05; font-weight: 700; color: #f7c921; letter-spacing: 1px;
+         -webkit-text-stroke: 3px #111; paint-order: stroke fill; animation: pop .28s ease-out; }
+  @keyframes pop { 0% { transform: translate(-50%,-50%) rotate(var(--rot,0deg)) scale(.3); }
+                   60% { transform: translate(-50%,-50%) rotate(var(--rot,0deg)) scale(1.25); }
+                   100% { transform: translate(-50%,-50%) rotate(var(--rot,0deg)) scale(1); } }
+  .flash { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+  .flash.y { background: #fff3a0; animation: fl .35s ease-out; }
+  .flash.r { background: #e03131; animation: fl .35s ease-out; }
+  @keyframes fl { from { opacity: .6; } to { opacity: 0; } }
+  .shake { animation: shake .32s; }
+  @keyframes shake { 0%,100% { transform: translate(0,0); } 20% { transform: translate(-7px,3px); } 40% { transform: translate(6px,-4px); }
+                     60% { transform: translate(-5px,-2px); } 80% { transform: translate(3px,3px); } }
+  #fx { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+    .mute { position: absolute; z-index: 5; right: 8px; bottom: max(8px, env(safe-area-inset-bottom)); width: 40px; height: 40px; border: 0; border-radius: 50%;
+      background: rgba(17,17,17,.88); font-size: 16px; cursor: pointer; padding: 0; touch-action: manipulation; }
+    .panel { position: absolute; z-index: 3; left: 50%; top: 50%; transform: translate(-50%,-50%); width: min(320px, calc(100% - 24px));
+       text-align: center; color: #fff; background: rgba(17,17,17,.93); border: 3px solid #f7c921; border-radius: 14px;
+       padding: 16px 18px; box-sizing: border-box; }
+  body:not(.show-toggle) .shopify-buy-frame--toggle { display: none !important; }
+  .panel { max-height: 92%; overflow-y: auto; }
+  .panel h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: 1.5px; color: #f7c921; }
+  .panel p { margin: 0 0 12px; font-size: 14px; line-height: 1.4; letter-spacing: .3px; font-family: Arial, sans-serif; }
+  .result-note { display: block; margin-top: 8px; font-size: 12px; line-height: 1.35; }
+  .panel button { min-height: 44px; font: inherit; font-size: 18px; letter-spacing: 1.5px; background: #f7c921; color: #111;
+                  border: 0; border-radius: 8px; padding: 9px 26px; cursor: pointer; touch-action: manipulation; }
+  @media (max-width: 340px) {
+    .panel { padding: 13px 14px; }
+    .panel h1 { font-size: 23px; }
+    .panel p { font-size: 13px; }
+  }
+  @media (max-height: 500px) {
+    .stage { min-height: 0; }
+    .panel { padding-top: 10px; padding-bottom: 10px; }
+    .panel p { margin-bottom: 7px; }
+  }
+</style>
+
+<div class="stage" id="stage">
+  <svg id="svg" viewBox="0 0 360 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Quick draw keychain game">
+    <defs>
+      <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#ffffff"/><stop offset=".35" stop-color="#b9bec4"/>
+        <stop offset=".6" stop-color="#f1f3f5"/><stop offset="1" stop-color="#8d939a"/>
+      </linearGradient>
+      <linearGradient id="fabric" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#f7c921"/><stop offset=".5" stop-color="#fbd53a"/><stop offset="1" stop-color="#eebb12"/>
+      </linearGradient>
+      <filter id="shadow" x="-30%" y="-10%" width="160%" height="130%">
+        <feDropShadow dx="3" dy="5" stdDeviation="4" flood-color="#000" flood-opacity=".25"/>
+      </filter>
+    </defs>
+
+    <g id="kc-swing">
+      <circle cx="120" cy="62" r="40" fill="none" stroke="url(#metal)" stroke-width="4"/>
+      <circle cx="120" cy="62" r="42" fill="none" stroke="#6d737a" stroke-width=".6" opacity=".6"/>
+      <ellipse cx="120" cy="114" rx="13" ry="20" fill="none" stroke="url(#metal)" stroke-width="3.5"/>
+      <rect x="113" y="128" width="14" height="24" rx="5" fill="url(#metal)" stroke="#6d737a" stroke-width=".8"/>
+      <line x1="113" y1="136" x2="127" y2="136" stroke="#6d737a" stroke-width=".8"/>
+      <line x1="113" y1="143" x2="127" y2="143" stroke="#6d737a" stroke-width=".8"/>
+      <line x1="120" y1="150" x2="120" y2="208" stroke="#aeb4bb" stroke-width="4" stroke-linecap="round"/>
+      <line x1="119" y1="150" x2="119" y2="208" stroke="#fff" stroke-width="1.2" stroke-opacity=".7"/>
+
+      <g id="kc-tag">
+        <rect x="64" y="180" width="112" height="330" fill="#000" fill-opacity="0"/>
+        <g filter="url(#shadow)"><rect x="92" y="190" width="56" height="300" rx="3" fill="url(#fabric)"/></g>
+        <rect x="92" y="190" width="56" height="300" rx="3" fill="none" stroke="#e0a800" stroke-width="6"/>
+        <rect x="92" y="190" width="56" height="300" rx="3" fill="none" stroke="#fff3a0" stroke-width="6" stroke-dasharray="1.2 2.2" opacity=".55"/>
+        <rect x="101" y="199" width="38" height="282" rx="2" fill="none" stroke="#c99600" stroke-width="1" stroke-dasharray="3 2" opacity=".7"/>
+        <circle cx="120" cy="208" r="9.5" fill="url(#metal)" stroke="#6d737a" stroke-width=".8"/>
+        <circle cx="120" cy="208" r="5" fill="#8a6d00"/>
+        <text transform="translate(120 355) rotate(90)" text-anchor="middle" dominant-baseline="central"
+              font-family="'Oswald','Bebas Neue',Impact,'Arial Narrow',sans-serif" font-weight="700" font-size="30"
+              textLength="220" lengthAdjust="spacingAndGlyphs" fill="#111" stroke="#111" stroke-width=".8" stroke-linejoin="round">PULL YELLOW STRAP</text>
+      </g>
+      <line x1="120" y1="200" x2="120" y2="208" stroke="#aeb4bb" stroke-width="4" stroke-linecap="round"/>
+    </g>
+  </svg>
+
+  <div class="cue" id="cue">PULL THE<br>YELLOW STRAP!</div>
+  <div class="flash" id="flash"></div>
+  <canvas id="fx"></canvas>
+  <button class="mute" id="mute" aria-label="Toggle sound and vibration">🔊</button>
+
+  <div class="panel" id="panel">
+    <h1 id="ttl">QUICK DRAW</h1>
+    <p id="msg">Hands off. Tap START, wait for the cue, then pull the yellow strap.</p>
+    <button id="go">START</button>
+    <div id="shop" style="display:none; margin-top:14px; border-top:2px dashed #f7c921; padding-top:12px">
+      <p style="margin:0 0 8px">Like the strap? Get the real keychain:</p>
+      <div id='product-component-1731336510513'></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var $ = function (i) { return document.getElementById(i); };
+  var svg = $('svg'), sw = $('kc-swing'), tg = $('kc-tag'), stage = $('stage'), panel = $('panel'), cue = $('cue'), msg = $('msg');
+  var OX = 60, PULL = 70, JITTER = 18;   // PULL = drag distance that counts as a pull; JITTER = movement allowed before the cue
+
+  // physics (pendulum motion plus a drag spring)
+  var W1 = 6, W2 = 14, D1 = 2.4, D2 = 3.2, C = 5;   // D1/D2 = damping (higher = less bounce)
+  var a1 = 6, a2 = 18, v1 = 0, v2 = 0, y = 0, vy = 0, tA = 0, xT = 0, yT = 0, x = 0, vx = 0, px = 0, py = 0;   // x,y = whole-keychain tug; px,py = pointer
+  var raf = null, last = 0, drag = false, gx = 0, gy = 0, dx = 0, dy = 0;
+
+  // game
+  var state = 'idle', timer = null, tCue = 0;
+
+  function clamp(x, m) { return Math.max(-m, Math.min(m, x)); }
+  function lim(x, lo, hi) { return Math.max(lo, Math.min(hi, x)); }
+  function S(a) { return 57.2958 * Math.sin(a * 0.0174533); }          // pendulum-style restoring force (works at any angle)
+  function gromPos() { var q = a1 * 0.0174533; return { x: x + OX + 120 - 186 * Math.sin(q), y: y + 22 + 186 * Math.cos(q) }; }
+  function draw() {
+    sw.setAttribute('transform', 'translate(' + (OX + x).toFixed(2) + ' ' + y.toFixed(2) + ') rotate(' + a1.toFixed(2) + ' 120 22)');
+    tg.setAttribute('transform', 'rotate(' + (a2 - a1).toFixed(2) + ' 120 208)');
+  }
+  function frame(t) {
+    var dt = Math.min((t - last) / 1000, 0.05); last = t;
+    var n = Math.max(1, Math.ceil(dt / 0.004)), h = dt / n;
+    if (drag) {   // while held: the strap points at your finger while the graphic stays proportional
+      var g = gromPos(), vX = px - g.x, vY = py - g.y, D = Math.sqrt(vX * vX + vY * vY);
+      if (D > 12) {
+        var th = Math.atan2(-vX, vY > 0 ? vY * 0.65 : vY) * 57.2958;   // slightly exaggerated so sideways pulls read clearly
+        while (th - a2 > 180) th -= 360; while (th - a2 < -180) th += 360;
+        tA = th;
+      }
+    }
+    for (var i = 0; i < n; i++) {
+      var d = a2 - a1, f1 = -W1 * a1 - D1 * v1 + C * S(d), f2 = -W2 * S(a2) - D2 * v2 - C * S(d) * 1.5, fx, fy;
+      if (drag) { f2 += 220 * (tA - a2) - 28 * v2; fx = -80 * (x - xT) - 13 * vx; fy = -80 * (y - yT) - 13 * vy; }
+      else { fx = -50 * x - 12 * vx; fy = -50 * y - 12 * vy; }   // near-critically damped: settles without wobble
+      v1 += f1 * h; v2 += f2 * h; vx += fx * h; vy += fy * h;
+      a1 = clamp(a1 + v1 * h, 35); a2 = clamp(a2 + v2 * h, 190); x = clamp(x + vx * h, 45); y = Math.max(-40, Math.min(45, y + vy * h));
+    }
+    draw();
+    var still = Math.abs(a1) + Math.abs(a2) + Math.abs(x) + Math.abs(y) + 0.2 * (Math.abs(v1) + Math.abs(v2) + Math.abs(vx) + Math.abs(vy)) < 0.08;
+    if (!drag && still) { a1 = a2 = v1 = v2 = x = vx = y = vy = 0; draw(); raf = null; } else raf = requestAnimationFrame(frame);
+  }
+  function ensure() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } }
+
+  // client coords -> SVG viewBox coords
+  var pt = svg.createSVGPoint();
+  function toVB(e) { pt.x = e.clientX; pt.y = e.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
+
+  function say(s) { msg.textContent = s; }
+  function showRoundButton(title, message) {
+    $('ttl').textContent = title || 'READY?';
+    say(message || 'Hands off. Tap GO, then wait for the cue.');
+    $('go').textContent = 'GO';
+    panel.style.display = 'block';
+  }
+  function beginWait() {
+    if (state !== 'armed') return;
+    panel.style.display = 'none'; state = 'waiting';
+    timer = setTimeout(showCue, 1500 + Math.random() * 2800);
+  }
+  function showCue() {
+    state = 'go';
+    cue.style.left = (28 + Math.random() * 44) + '%';
+    cue.style.top = (24 + Math.random() * 50) + '%';
+    cue.style.display = 'block';
+    say('PULL!'); cue.style.setProperty('--rot', (Math.random() * 10 - 5) + 'deg'); flash('y'); sfx.cue(); buzz(40);
+    requestAnimationFrame(function () { tCue = performance.now(); });   // start the clock when it's actually on screen
+  }
+  function falseStart() {
+    clearTimeout(timer); drag = false; stage.classList.remove('dragging'); ensure(); state = 'locked'; flash('r'); sfx.bad(); buzz([60, 40, 60]); shake();
+    setTimeout(function () { state = 'armed'; showRoundButton('TOO SOON', 'False start. Tap GO and keep your hands off.'); }, 900);
+  }
+  function resultMessage(rt) {
+    var pace = rt < 200 ? 'LIGHTNING' : rt < 300 ? 'QUICK DRAW' : rt < 450 ? 'NOT BAD' : 'SLOW POKE';
+    var note = rt < 250
+      ? 'So fast that Soarin\' just asked you to stop improving the queue throughput. Watch your Cast Members, be nice, and thank them.'
+      : rt < 450
+        ? 'Test Track has approved your acceleration, pending one more calibration lap. Watch your Cast Members, be nice, and thank them.'
+        : 'The queue paused long enough for Test Track to complete a full lap and file a small delay report. Watch your Cast Members, be nice, and thank them.';
+    return '<b>' + rt + ' ms</b><br>' + pace + '<br><span class="result-note">' + note + '</span>';
+  }
+  function success(e) {
+    var ts = e.timeStamp, rt = Math.max(1, Math.round(ts - tCue));
+    cue.style.display = 'none'; drag = false; juice(e, rt); state = 'over';
+    var dd = Math.sqrt(dx * dx + dy * dy) || 1;     // YANK: the whole keychain lurches along the pull, then drops back
+    vx += dx / dd * 520; vy += dy / dd * 520; v1 += (dx < 0 ? 1 : -1) * 25; ensure();
+    $('ttl').textContent = 'RESULTS';
+    msg.innerHTML = resultMessage(rt);
+    $('go').textContent = 'PLAY AGAIN'; panel.style.display = 'block';
+    $('shop').style.display = 'block'; document.body.classList.add('show-toggle'); loadShop();
+  }
+  function start() {
+    panel.style.display = 'none'; $('shop').style.display = 'none'; document.body.classList.remove('show-toggle'); cue.style.display = 'none';
+    state = 'armed'; showRoundButton();
+  }
+
+  // ---------- juice: sound, haptics, flash, shake, confetti ----------
+  var AC = null, muted = false;
+  function audio() {
+    if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (AC && AC.state === 'suspended') AC.resume();
+    return AC;
+  }
+  function tone(f1, f2, dur, type, vol, delay) {
+    var c = audio(); if (!c || muted) return;
+    var t = c.currentTime + (delay || 0), o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(f1, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(vol || 0.2, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function noise(dur, vol) {      // fabric-rip burst
+    var c = audio(); if (!c || muted) return;
+    var len = Math.floor(c.sampleRate * dur), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    var src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(), t = c.currentTime;
+    src.buffer = buf; f.type = 'bandpass'; f.Q.value = 1.2;
+    f.frequency.setValueAtTime(3500, t); f.frequency.exponentialRampToValueAtTime(700, t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    src.connect(f); f.connect(g); g.connect(c.destination); src.start(t);
+  }
+  var sfx = {
+    grab: function () { tone(220, 0, 0.06, 'triangle', 0.15); },
+    cue:  function () { tone(880, 0, 0.12, 'square', 0.1); tone(1320, 0, 0.2, 'square', 0.1, 0.09); },
+    rip:  function () { noise(0.3, 0.4); tone(320, 60, 0.22, 'sawtooth', 0.1); },
+    win:  function () { [660, 880, 1320, 1760].forEach(function (f, i) { tone(f, 0, 0.14, 'triangle', 0.16, 0.12 + i * 0.07); }); },
+    bad:  function () { tone(170, 80, 0.35, 'sawtooth', 0.2); }
+  };
+  function buzz(p) { if (!muted && navigator.vibrate) { try { navigator.vibrate(p); } catch (e) {} } }   // Android only; iOS ignores it
+
+  var flEl = $('flash');
+  function flash(c) { flEl.className = 'flash'; void flEl.offsetWidth; flEl.className = 'flash ' + c; }
+  function shake() { stage.classList.remove('shake'); void stage.offsetWidth; stage.classList.add('shake'); }
+
+  var cv = $('fx'), cx = cv.getContext('2d'), parts = [], fxRaf = null, fxLast = 0;
+  function burst(x, y, n, ux, uy) {
+    var r = stage.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+    cv.width = r.width * d; cv.height = r.height * d; cx.setTransform(d, 0, 0, d, 0, 0);
+    var cols = ['#f7c921', '#fbd53a', '#111', '#fff', '#e0a800'];
+    for (var i = 0; i < n; i++) {
+      var a = (ux !== undefined && i % 3) ? Math.atan2(uy, ux) + (Math.random() - 0.5) * 1.3 : Math.random() * Math.PI * 2, sp = 150 + Math.random() * 450;
+      parts.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 220, r: Math.random() * 6.3, vr: (Math.random() - 0.5) * 22,
+                   w: 5 + Math.random() * 8, h: 2 + Math.random() * 4, c: cols[Math.floor(Math.random() * cols.length)], life: 1 });
+    }
+    if (!fxRaf) { fxLast = performance.now(); fxRaf = requestAnimationFrame(fxFrame); }
+  }
+  function fxFrame(t) {
+    var dt = Math.min((t - fxLast) / 1000, 0.05); fxLast = t;
+    cx.clearRect(0, 0, cv.width, cv.height);
+    parts = parts.filter(function (q) { return q.life > 0 && q.y < stage.clientHeight + 30; });
+    parts.forEach(function (q) {
+      q.vy += 900 * dt; q.vx *= 0.995; q.x += q.vx * dt; q.y += q.vy * dt; q.r += q.vr * dt; q.life -= dt / 1.5;
+      cx.save(); cx.globalAlpha = Math.max(q.life, 0); cx.translate(q.x, q.y); cx.rotate(q.r);
+      cx.fillStyle = q.c; cx.fillRect(-q.w / 2, -q.h / 2, q.w, q.h); cx.restore();
+    });
+    if (parts.length) fxRaf = requestAnimationFrame(fxFrame); else { fxRaf = null; cx.clearRect(0, 0, cv.width, cv.height); }
+  }
+  function juice(e, rt) {          // everything that fires on a successful pull
+    var r = stage.getBoundingClientRect(), fast = rt < 250;
+    var dd = Math.sqrt(dx * dx + dy * dy) || 1;
+    burst(e.clientX - r.left, e.clientY - r.top, fast ? 120 : 45, dx / dd, dy / dd);
+    shake(); sfx.rip(); if (fast) sfx.win(); buzz(fast ? [30, 40, 90] : 70);
+  }
+
+  // ---------- Shopify Buy Button (loads once, on the first end screen) ----------
+  var shopStarted = false;
+  function loadShop() {
+    if (shopStarted) return; shopStarted = true;
+    var scriptURL = 'https://sdks.shopifycdn.com/buy-button/latest/buy-button-storefront.min.js';
+    if (window.ShopifyBuy) {
+      if (window.ShopifyBuy.UI) { ShopifyBuyInit(); } else { loadScript(); }
+    } else { loadScript(); }
+    function loadScript() {
+      var script = document.createElement('script');
+      script.async = true; script.src = scriptURL;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(script);
+      script.onload = ShopifyBuyInit;
+    }
+    function ShopifyBuyInit() {
+      var client = ShopifyBuy.buildClient({
+        domain: 'madetothrill.myshopify.com',
+        storefrontAccessToken: 'cf99699aaf5f86835533babf1c54bea3'
+      });
+      var btn = { "font-size": "16px", "padding-top": "16px", "padding-bottom": "16px", "color": "#000000",
+                  ":hover": { "color": "#000000", "background-color": "#e6ce00" }, "background-color": "#ffe500",
+                  ":focus": { "background-color": "#e6ce00" }, "border-radius": "40px", "padding-left": "50px", "padding-right": "50px" };
+      var qty = { "font-size": "16px", "padding-top": "16px", "padding-bottom": "16px" };
+      var gray = "#4c4c4c", mod = { "font-family": "Helvetica Neue, sans-serif", "font-weight": "bold", "color": gray };
+      ShopifyBuy.UI.onReady(client).then(function (ui) {
+        ui.createComponent('product', {
+          id: '23642112026',
+          node: document.getElementById('product-component-1731336510513'),
+          moneyFormat: '%24%7B%7Bamount%7D%7D',
+          options: {
+            "product": {
+              "styles": {
+                "product": { "@media (min-width: 601px)": { "margin-left": "0", "margin-bottom": "50px" } },
+                "button": btn, "quantityInput": qty,
+                "price": { "font-weight": "bold" }, "compareAt": { "font-weight": "bold" },
+                "unitPrice": { "font-weight": "bold" }, "description": { "font-weight": "bold" }
+              },
+              "contents": { "img": false, "title": false, "price": false },
+              "text": { "button": "Add to cart" }
+            },
+            "productSet": { "styles": { "products": { "@media (min-width: 601px)": { "margin-left": "-20px" } } } },
+            "modalProduct": {
+              "contents": { "img": false, "imgWithCarousel": true, "button": false, "buttonWithQuantity": true },
+              "styles": {
+                "product": { "@media (min-width: 601px)": { "max-width": "100%", "margin-left": "0px", "margin-bottom": "0px" } },
+                "button": btn, "quantityInput": qty,
+                "price": Object.assign({ "font-size": "18px" }, mod),
+                "compareAt": Object.assign({ "font-size": "15.3px" }, mod),
+                "unitPrice": Object.assign({ "font-size": "15.3px" }, mod),
+                "description": Object.assign({ "font-size": "14px" }, mod)
+              }
+            },
+            "option": { "styles": { "label": { "font-weight": "bold" }, "select": { "font-weight": "bold" } } },
+            "cart": {
+              "styles": {
+                "button": { "font-size": "16px", "padding-top": "16px", "padding-bottom": "16px", "color": "#000000",
+                            ":hover": { "color": "#000000", "background-color": "#e6ce00" }, "background-color": "#ffe500",
+                            ":focus": { "background-color": "#e6ce00" }, "border-radius": "40px" },
+                "title": { "color": gray }, "header": { "color": gray }, "lineItems": { "color": gray },
+                "subtotalText": { "color": gray }, "subtotal": { "color": gray }, "notice": { "color": gray },
+                "currency": { "color": gray }, "close": { "color": gray, ":hover": { "color": gray } },
+                "empty": { "color": gray }, "noteDescription": { "color": gray }, "discountText": { "color": gray },
+                "discountIcon": { "fill": gray }, "discountAmount": { "color": gray }
+              },
+              "text": { "button": "Checkout" },
+              "popup": true   // was false: checkout can't load inside Carrd's iframe, so it opens in a new tab
+            },
+            "toggle": {
+              "styles": {
+                "toggle": { "background-color": "#ffe500", ":hover": { "background-color": "#e6ce00" }, ":focus": { "background-color": "#e6ce00" } },
+                "count": { "font-size": "16px", "color": "#000000", ":hover": { "color": "#000000" } },
+                "iconPath": { "fill": "#000000" }
+              }
+            },
+            "lineItem": {
+              "styles": {
+                "variantTitle": { "color": gray }, "title": { "color": gray }, "price": { "color": gray },
+                "fullPrice": { "color": gray }, "discount": { "color": gray }, "discountIcon": { "fill": gray },
+                "quantity": { "color": gray },
+                "quantityIncrement": { "color": gray, "border-color": gray },
+                "quantityDecrement": { "color": gray, "border-color": gray },
+                "quantityInput": { "color": gray, "border-color": gray }
+              }
+            }
+          }
+        });
+      });
+    }
+  }
+
+  // input
+  svg.addEventListener('pointerdown', function (e) {
+    if (state !== 'waiting' && state !== 'go') return;
+    if (!e.target.closest || !e.target.closest('#kc-tag') || drag) return;
+    e.preventDefault();
+    try { svg.setPointerCapture(e.pointerId); } catch (x) {}
+    var p = toVB(e); gx = px = p.x; gy = py = p.y; dx = dy = 0; xT = yT = 0; tA = a2;
+    drag = true; stage.classList.add('dragging'); audio(); sfx.grab(); buzz(10); ensure();
+  });
+  svg.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    var p = toVB(e); dx = p.x - gx; dy = p.y - gy;
+    px = p.x; py = p.y; xT = clamp(dx * 0.2, 40); yT = lim(dy * 0.35, -30, 40);   // tug the whole keychain toward the pull
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    if (state === 'waiting' && dist > JITTER) falseStart();
+    else if (state === 'go' && tCue && dist >= PULL) success(e);
+  });
+  function release() {
+    if (!drag) { stage.classList.remove('dragging'); return; }
+    drag = false; stage.classList.remove('dragging'); xT = yT = 0; ensure();
+    if (state === 'waiting') { clearTimeout(timer); state = 'armed'; showRoundButton(); say('Let go too soon. Tap GO to try again.'); }
+  }
+  svg.addEventListener('pointerup', release);
+  svg.addEventListener('pointercancel', release);
+  $('go').addEventListener('click', function () { audio(); if (state === 'armed') beginWait(); else start(); });
+  $('mute').addEventListener('click', function () { muted = !muted; this.textContent = muted ? '🔇' : '🔊'; audio(); });
+
+  draw(); ensure();   // initial settling swing behind the start panel
+})();
+</script>
